@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # LUAROCKS_API_KEY lives in the Production environment's secrets.
+    environment: Production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: "5.4"
+
+      - uses: leafo/gh-actions-luarocks@v5
+        with:
+          luarocksVersion: "3.13.0"
+
+      # luarocks upload needs a JSON library to talk to the luarocks.org API.
+      - run: luarocks install dkjson
+
+      # The dev rockspec is the single source of truth: stamp the tag's
+      # version into it instead of committing one rockspec per release.
+      - name: Generate versioned rockspec
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}-1"
+          sed -e "s/^version = \"dev-1\"/version = \"$VERSION\"/" \
+              -e "s|^\(   url = .*\)\$|\1,\n   tag = \"$GITHUB_REF_NAME\"|" \
+              jsonwebtoken-dev-1.rockspec > "jsonwebtoken-$VERSION.rockspec"
+          echo "ROCKSPEC=jsonwebtoken-$VERSION.rockspec" >> "$GITHUB_ENV"
+          cat "jsonwebtoken-$VERSION.rockspec"
+
+      - name: Pack the source rock
+        run: luarocks pack "$ROCKSPEC"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.rock
+            *.rockspec
+
+      # --force makes re-runs idempotent: re-uploading the same version
+      # overwrites it instead of failing.
+      - name: Upload to luarocks.org
+        run: luarocks upload "$ROCKSPEC" --force --api-key "${{ secrets.LUAROCKS_API_KEY }}"
