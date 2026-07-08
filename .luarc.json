@@ -1,0 +1,12 @@
+{
+    "runtime.version": "Lua 5.4",
+    "diagnostics.globals": [
+        "describe",
+        "it",
+        "assert",
+        "before_each",
+        "after_each",
+        "setup",
+        "teardown"
+    ]
+}
