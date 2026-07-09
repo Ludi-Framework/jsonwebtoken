@@ -54,12 +54,15 @@ describe("jwt.sign", function()
     end)
 
     it("rejects bad arguments loudly", function()
-        assert.error_matches(function() jwt.sign("s", SECRET) end,
-            "Claims must be a table")
-        assert.error_matches(function() jwt.sign(CLAIMS, nil) end,
-            "Secret must be a string")
-        assert.error_matches(function() jwt.sign(CLAIMS, "") end,
-            "Secret must not be empty")
+        assert.error_matches(function()
+            jwt.sign("s", SECRET)
+        end, "Claims must be a table")
+        assert.error_matches(function()
+            jwt.sign(CLAIMS, nil)
+        end, "Secret must be a string")
+        assert.error_matches(function()
+            jwt.sign(CLAIMS, "")
+        end, "Secret must not be empty")
         assert.error_matches(function()
             jwt.sign(CLAIMS, SECRET, { alg = "RS256" })
         end, "Unsupported algorithm")
@@ -93,10 +96,8 @@ describe("jwt.verify", function()
 
     it("rejects a tampered payload", function()
         local header, _, signature = GOLDEN.HS256:match("([^.]+)%.([^.]+)%.([^.]+)")
-        local forged = require("jsonwebtoken.base64url")
-            .encode('{"sub":"admin"}')
-        local claims, err = jwt.verify(
-            header .. "." .. forged .. "." .. signature, SECRET)
+        local forged = require("jsonwebtoken.base64url").encode('{"sub":"admin"}')
+        local claims, err = jwt.verify(header .. "." .. forged .. "." .. signature, SECRET)
         assert.is_nil(claims)
         assert.equal("invalid_signature", err.code)
     end)
@@ -112,10 +113,8 @@ describe("jwt.verify", function()
         local base64url = require("jsonwebtoken.base64url")
         local payload = base64url.encode('{"sub":"admin"}')
         for _, spelling in ipairs({ "none", "None", "NONE" }) do
-            local header = base64url.encode(
-                ('{"alg":"%s","typ":"JWT"}'):format(spelling))
-            local claims, err = jwt.verify(
-                header .. "." .. payload .. ".sig", SECRET)
+            local header = base64url.encode(('{"alg":"%s","typ":"JWT"}'):format(spelling))
+            local claims, err = jwt.verify(header .. "." .. payload .. ".sig", SECRET)
             assert.is_nil(claims)
             assert.equal("invalid_algorithm", err.code)
         end
@@ -128,7 +127,11 @@ describe("jwt.verify", function()
 
     it("rejects structurally broken tokens as malformed", function()
         for _, bad in ipairs({
-            "", "abc", "a.b", "a.b.c.d", "!!!.b.c",
+            "",
+            "abc",
+            "a.b",
+            "a.b.c.d",
+            "!!!.b.c",
         }) do
             local claims, err = jwt.verify(bad, SECRET)
             assert.is_nil(claims, "accepted: " .. bad)
@@ -142,10 +145,8 @@ describe("jwt.verify", function()
         local header = base64url.encode('{"alg":"HS256","typ":"JWT"}')
         local payload = base64url.encode("not json")
         local signing_input = header .. "." .. payload
-        local signature = base64url.encode(
-            sha2.hmac("sha256", SECRET, signing_input))
-        local claims, err = jwt.verify(
-            signing_input .. "." .. signature, SECRET)
+        local signature = base64url.encode(sha2.hmac("sha256", SECRET, signing_input))
+        local claims, err = jwt.verify(signing_input .. "." .. signature, SECRET)
         assert.is_nil(claims)
         assert.equal("malformed", err.code)
     end)

@@ -2,8 +2,7 @@ local json = require("jsonwebtoken.json")
 
 describe("json.encode", function()
     it("sorts object keys, so equal tables encode identically", function()
-        assert.equal('{"alg":"HS256","typ":"JWT"}',
-            json.encode({ typ = "JWT", alg = "HS256" }))
+        assert.equal('{"alg":"HS256","typ":"JWT"}', json.encode({ typ = "JWT", alg = "HS256" }))
     end)
 
     it("encodes an empty table as an empty object", function()
@@ -32,15 +31,25 @@ describe("json.encode", function()
     end)
 
     it("encodes nested structures", function()
-        assert.equal('{"user":{"roles":["admin"],"sub":"42"}}',
-            json.encode({ user = { sub = "42", roles = { "admin" } } }))
+        assert.equal(
+            '{"user":{"roles":["admin"],"sub":"42"}}',
+            json.encode({ user = { sub = "42", roles = { "admin" } } })
+        )
     end)
 
     it("rejects values JSON cannot represent", function()
-        assert.error_matches(function() json.encode(print) end, "function")
-        assert.error_matches(function() json.encode(nil) end, "nil")
-        assert.error_matches(function() json.encode(0 / 0) end, "NaN")
-        assert.error_matches(function() json.encode(math.huge) end, "NaN")
+        assert.error_matches(function()
+            json.encode(print)
+        end, "function")
+        assert.error_matches(function()
+            json.encode(nil)
+        end, "nil")
+        assert.error_matches(function()
+            json.encode(0 / 0)
+        end, "NaN")
+        assert.error_matches(function()
+            json.encode(math.huge)
+        end, "NaN")
     end)
 
     it("rejects non-string object keys", function()
@@ -52,7 +61,9 @@ describe("json.encode", function()
     it("rejects reference cycles instead of looping forever", function()
         local t = {}
         t.self = t
-        assert.error_matches(function() json.encode(t) end, "nesting too deep")
+        assert.error_matches(function()
+            json.encode(t)
+        end, "nesting too deep")
     end)
 end)
 
@@ -105,8 +116,16 @@ describe("json.decode", function()
 
     it("rejects malformed input with a position", function()
         for _, bad in ipairs({
-            '{"a":}', '{"a" 1}', "[1,]", '"unterminated', '"bad \\q escape"',
-            "tru", "01x", "-", '{"a":1,}', '{1:2}',
+            '{"a":}',
+            '{"a" 1}',
+            "[1,]",
+            '"unterminated',
+            '"bad \\q escape"',
+            "tru",
+            "01x",
+            "-",
+            '{"a":1,}',
+            "{1:2}",
         }) do
             local v, err = json.decode(bad)
             assert.is_nil(v, "accepted: " .. bad)

@@ -40,8 +40,7 @@ end
 local function checked_alg(opts)
     local alg = opts.alg or DEFAULT_ALG
     if not HMAC_HASH[alg] then
-        error(("Unsupported algorithm %q (HS256, HS384 or HS512)")
-            :format(tostring(alg)), 3)
+        error(("Unsupported algorithm %q (HS256, HS384 or HS512)"):format(tostring(alg)), 3)
     end
     return alg
 end
@@ -93,15 +92,13 @@ function jwt.sign(claims, secret, opts)
     if opts.header then
         for k, v in pairs(opts.header) do
             if k == "alg" or k == "typ" then
-                error(("%q cannot be overridden through opts.header")
-                    :format(k), 2)
+                error(("%q cannot be overridden through opts.header"):format(k), 2)
             end
             header[k] = v
         end
     end
 
-    local signing_input = base64url.encode(json.encode(header))
-        .. "." .. base64url.encode(json.encode(claims))
+    local signing_input = base64url.encode(json.encode(header)) .. "." .. base64url.encode(json.encode(claims))
     local signature = sha2.hmac(HMAC_HASH[alg], secret, signing_input)
     return signing_input .. "." .. base64url.encode(signature)
 end
@@ -136,8 +133,7 @@ function jwt.verify(token, secret, opts)
     opts = opts or {}
     local alg = checked_alg(opts)
 
-    local header_b64, claims_b64, signature_b64 =
-        token:match("^([^.]+)%.([^.]+)%.([^.]+)$")
+    local header_b64, claims_b64, signature_b64 = token:match("^([^.]+)%.([^.]+)%.([^.]+)$")
     if not header_b64 then
         return fail("malformed", "Token is not three dot-separated parts")
     end
@@ -148,17 +144,14 @@ function jwt.verify(token, secret, opts)
         return fail("malformed", "Header is not base64url-encoded JSON")
     end
     if header.alg ~= alg then
-        return fail("invalid_algorithm",
-            ("Token is signed with %s, expected %s")
-                :format(tostring(header.alg), alg))
+        return fail("invalid_algorithm", ("Token is signed with %s, expected %s"):format(tostring(header.alg), alg))
     end
 
     local signature = base64url.decode(signature_b64)
     if not signature then
         return fail("malformed", "Signature is not valid base64url")
     end
-    local expected = sha2.hmac(HMAC_HASH[alg], secret,
-        header_b64 .. "." .. claims_b64)
+    local expected = sha2.hmac(HMAC_HASH[alg], secret, header_b64 .. "." .. claims_b64)
     if not constant_time_equal(signature, expected) then
         return fail("invalid_signature", "Signature does not match")
     end
@@ -190,18 +183,13 @@ function jwt.verify(token, secret, opts)
     end
 
     if opts.iss ~= nil and claims.iss ~= opts.iss then
-        return fail("invalid_issuer",
-            ("Issuer is %s, expected %s")
-                :format(tostring(claims.iss), opts.iss))
+        return fail("invalid_issuer", ("Issuer is %s, expected %s"):format(tostring(claims.iss), opts.iss))
     end
     if opts.aud ~= nil and not audience_matches(claims.aud, opts.aud) then
-        return fail("invalid_audience",
-            ("Audience does not include %s"):format(opts.aud))
+        return fail("invalid_audience", ("Audience does not include %s"):format(opts.aud))
     end
     if opts.sub ~= nil and claims.sub ~= opts.sub then
-        return fail("invalid_subject",
-            ("Subject is %s, expected %s")
-                :format(tostring(claims.sub), opts.sub))
+        return fail("invalid_subject", ("Subject is %s, expected %s"):format(tostring(claims.sub), opts.sub))
     end
 
     return claims
