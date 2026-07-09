@@ -47,8 +47,7 @@ describe("base64url.decode", function()
     end)
 
     it("decodes a real JWT header", function()
-        assert.equal('{"alg":"HS256","typ":"JWT"}',
-            base64url.decode("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"))
+        assert.equal('{"alg":"HS256","typ":"JWT"}', base64url.decode("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"))
     end)
 
     it("rejects padded input", function()

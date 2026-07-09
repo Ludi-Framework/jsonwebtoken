@@ -7,4 +7,12 @@ test:
 lint:
 	luacheck jsonwebtoken spec
 
-.PHONY: test lint
+# Format Lua sources in place with stylua.
+fmt:
+	stylua jsonwebtoken/ spec/
+
+# Verify formatting without writing; fails if anything is out of style.
+fmt-check:
+	stylua --check jsonwebtoken/ spec/
+
+.PHONY: test lint fmt fmt-check
